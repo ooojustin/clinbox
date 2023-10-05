@@ -18,19 +18,20 @@ async fn main() {
         }
     };
 
-    let interval = Duration::from_secs(30);
+    let interval = Duration::from_secs(10);
     sleep(interval).await;
 
-    loop {
-        match inbox.get_mail().await {
-            Ok(mail) => {
-                println!("{:?}", mail);
-            },
-            Err(e) => {
-                eprintln!("mail error: {}", e);
-            }
-        };
-        sleep(interval).await;
-    }
-
+    //loop {
+    match inbox.get_mail().await {
+        Ok(mail) => {
+            println!("{:?}", mail);
+        },
+        Err(e) => {
+            eprintln!("mail error: {}", e);
+        }
+    };
+    sleep(interval).await;
+    //}
+    
+    inbox.save();
 }

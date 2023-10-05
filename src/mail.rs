@@ -1,24 +1,40 @@
-use reqwest::{Client, header};
+#[path = "cookies.rs"]
+mod cookies;
 
+use std::error::Error;
 use serde::Deserialize;
+use reqwest::{Client, header};
+use reqwest_cookie_store::CookieStoreMutex;
 
 const DISPOSABLE_MAIL: &str = "https://www.disposablemail.com/";
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0";
 
 impl Inbox {
     pub fn new() -> Self {
+        let mutex = cookies::get_store_mutex();
+        let cookies = std::sync::Arc::new(mutex);
+        {
+            // Examine initial contents
+            println!("initial load");
+            let store = cookies.lock().unwrap();
+            for c in store.iter_any() {
+                println!("{:?}", c);
+            }
+        }
+
         let client = Client::builder()
-            .cookie_store(true)
+            .cookie_provider(std::sync::Arc::clone(&cookies))
             .build()
             .unwrap();
 
         Inbox {
-            client,
             address_info: None,
+            client,
+            cookies,
         }
     }
 
-    pub async fn establish_address(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn establish_address(&mut self) -> Result<(), Box<dyn Error>> {
         self.client.get(DISPOSABLE_MAIL)
             .headers(headers(false))
             .send()
@@ -38,7 +54,7 @@ impl Inbox {
         Ok(())
     }
 
-    pub async fn get_mail(&self) -> Result<Vec<Email>, Box<dyn std::error::Error>> {
+    pub async fn get_mail(&self) -> Result<Vec<Email>, Box<dyn Error>> {
         let response = self.client.get(format!("{}index/refresh", DISPOSABLE_MAIL))
             .headers(headers(true))
             .send()
@@ -50,10 +66,18 @@ impl Inbox {
         
         Ok(mail)
     }
+
+    pub fn save(&self) {
+        let c = std::sync::Arc::clone(&self.cookies);
+        match cookies::save_store(c) {
+            Ok(()) => println!("Saved cookies."),
+            Err(e) => eprintln!("Error saving cookies: {}", e)
+        }
+    }
 }
 
 impl Email {
-    fn list_from_str(text: String) -> Result<Vec<Self>, Box<dyn std::error::Error>> {
+    fn list_from_str(text: String) -> Result<Vec<Self>, Box<dyn Error>> {
         let mut mail: Vec<Email> = serde_json::from_str(&text)?;
         for m in &mut mail {
             m.read = m.read_str.to_lowercase() != "new";
@@ -63,8 +87,9 @@ impl Email {
 }
 
 pub struct Inbox {
-    client: Client,
     pub address_info: Option<AddressInfo>,
+    client: Client,
+    cookies: std::sync::Arc<CookieStoreMutex>,
 }
 
 #[derive(Debug, Deserialize)]
