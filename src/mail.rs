@@ -11,9 +11,14 @@ pub struct Inbox {
 }
 
 impl Inbox {
-    pub fn new() -> Inbox {
+    pub fn new() -> Self {
+        let client = Client::builder()
+            .cookie_store(true)
+            .build()
+            .unwrap();
+
         Inbox {
-            client: Client::new(),
+            client,
             address: "".to_string(),
         }
     }
