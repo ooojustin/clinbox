@@ -1,8 +1,8 @@
 #[path = "cookies.rs"]
 mod cookies;
 
-use std::error::Error;
 use serde::Deserialize;
+use anyhow::Result;
 use reqwest::{Client, header};
 use reqwest_cookie_store::CookieStoreMutex;
 
@@ -34,7 +34,7 @@ impl Inbox {
         }
     }
 
-    pub async fn establish_address(&mut self) -> Result<(), Box<dyn Error>> {
+    pub async fn establish_address(&mut self) -> Result<()> {
         self.client.get(DISPOSABLE_MAIL)
             .headers(headers(false))
             .send()
@@ -54,7 +54,7 @@ impl Inbox {
         Ok(())
     }
 
-    pub async fn get_mail(&self) -> Result<Vec<Email>, Box<dyn Error>> {
+    pub async fn get_mail(&self) -> Result<Vec<Email>> {
         let response = self.client.get(format!("{}index/refresh", DISPOSABLE_MAIL))
             .headers(headers(true))
             .send()
@@ -77,7 +77,7 @@ impl Inbox {
 }
 
 impl Email {
-    fn list_from_str(text: String) -> Result<Vec<Self>, Box<dyn Error>> {
+    fn list_from_str(text: String) -> Result<Vec<Self>> {
         let mut mail: Vec<Email> = serde_json::from_str(&text)?;
         for m in &mut mail {
             m.read = m.read_str.to_lowercase() != "new";

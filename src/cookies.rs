@@ -1,13 +1,13 @@
 use std::fs;
-use std::error::Error;
+use anyhow::{Result, anyhow};
 use reqwest_cookie_store::{CookieStore, CookieStoreMutex};
 
 const COOKIES_PATH: &str = "./cookies.json";
 
-fn get_store() -> Result<CookieStore, Box<dyn Error>> {
+fn get_store() -> Result<CookieStore> {
     let metadata = fs::metadata(COOKIES_PATH)?;
     if !metadata.is_file() {
-        return Err("Cookies path must be a file.".into())
+        return Err(anyhow!("Cookies path must be a file."))
     }
 
     let file = fs::File::open(COOKIES_PATH)
@@ -22,10 +22,17 @@ fn get_store() -> Result<CookieStore, Box<dyn Error>> {
 pub fn get_store_mutex() -> CookieStoreMutex {
     let store = get_store()
         .unwrap_or(CookieStore::default());
+    //let store = match get_store() {
+        //Ok(s) => s,
+        //Err(e) => {
+            //eprintln!("get_store error: {}", e);
+            //CookieStore::default()
+        //}
+    //};
     CookieStoreMutex::new(store)
 }
 
-pub fn save_store(cookies: std::sync::Arc<CookieStoreMutex>) -> Result<(), Box<dyn Error>> {
+pub fn save_store(cookies: std::sync::Arc<CookieStoreMutex>) -> Result<()> {
     let mut writer = std::fs::File::create(COOKIES_PATH)
         .map(std::io::BufWriter::new)?;
     let store = cookies.lock().unwrap();
