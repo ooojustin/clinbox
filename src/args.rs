@@ -12,9 +12,12 @@ pub enum Commands {
     Show {
         #[arg(short, long, default_value = "5")]
         count: usize,
+        #[arg(short = 'C', long)]
+        copy: bool,
     },
     Open {
         #[arg()]
         id: u32,
-    }
+    },
+    Copy
 }

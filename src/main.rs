@@ -1,8 +1,11 @@
 extern crate lazy_static;
+extern crate clipboard;
 
 mod mail;
 mod args;
 
+use anyhow::{Result, anyhow};
+use clipboard::{ClipboardContext, ClipboardProvider};
 use mail::{Inbox, Email};
 use std::sync::Mutex;
 use lazy_static::lazy_static;
@@ -18,23 +21,22 @@ async fn main() {
 
     let mut inbox = INBOX.lock().unwrap();
 
-    match inbox.establish_address().await {
-        Ok(()) => {
-            let ai = inbox.address_info.as_ref().unwrap();
-            println!("email: {}", ai.email);
-        },
-        Err(e) => {
-            eprintln!("error: {}", e);
-        }
-    };
+    if let Err(e) = inbox.establish_address().await {
+        panic!("Failed to establish disposable mail session: {}", e);
+    }
+
+    let ai = inbox.address_info.as_ref().unwrap();
+    let mut copy_email = false;
 
     let args = CLI::parse();
     match args.command {
-        args::Commands::Show { count }=> {
-            let ai = inbox.address_info.as_ref().unwrap();
+        args::Commands::Show { count, copy }=> {
+            println!("Email address: {}", ai.email);
+            if copy {
+                copy_email = true;
+            }
             let all_emails: Vec<Email> = inbox.get_mail().await.unwrap();
             let emails: Vec<&Email> = all_emails.iter().take(count).collect();
-            println!("Email address: {}", ai.email);
             print_emails(&emails);
         },
         args::Commands::Open { id }  => {
@@ -54,6 +56,21 @@ async fn main() {
                     println!("Failed to find email with specified ID: {}", id);
                 }
             }
+        },
+        args::Commands::Copy => {
+            println!("Email address: {}", ai.email);
+            copy_email = true;
+        }
+    }
+
+    if copy_email {
+        match copy_to_clipboard(&ai.email) {
+            Ok(()) => {
+                println!("Email address copied to clipboard.");
+            },
+            Err(err) => {
+                eprintln!("{}", err);
+            }
         }
     }
 
@@ -63,7 +80,22 @@ async fn main() {
 
 fn print_emails(emails: &Vec<&Email>) {
     for email in emails {
-        let r = if email.read { "⦾" } else { "⦿" };
+        let r = if email.read { "○" } else { "●" };
         println!("[{}] {} {} - {} ({})", email.id, r, email.subject, email.from, email.when);
     }
+}
+
+fn copy_to_clipboard(text: &str) -> Result<()> {
+    let mut clipboard: ClipboardContext = match ClipboardProvider::new() {
+        Ok(clipboard) => clipboard,
+        Err(err) => {
+            return Err(anyhow!(format!("Failed to created instance of clipboard provider: {}", err)));
+        }
+    };
+
+    if let Err(err) = clipboard.set_contents(text.to_owned()) {
+        return Err(anyhow!(format!("Failed to set clipboard contents: {}", err)));
+    }
+
+    Ok(())
 }
