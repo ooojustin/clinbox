@@ -39,6 +39,9 @@ async fn main() {
     
     println!("emails [populated]: {:?}", emails);
 
+    let email = emails.get(0).unwrap();
+    email.open().unwrap();
+
     inbox.save_cookies();
 
 }

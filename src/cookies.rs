@@ -1,4 +1,4 @@
-use std::fs;
+use std::fs::{self, File};
 use anyhow::{Result, anyhow};
 use reqwest_cookie_store::{CookieStore, CookieStoreMutex};
 
@@ -10,7 +10,7 @@ fn get_store() -> Result<CookieStore> {
         return Err(anyhow!("Cookies path must be a file."))
     }
 
-    let file = fs::File::open(COOKIES_PATH)
+    let file = File::open(COOKIES_PATH)
         .map(std::io::BufReader::new)?;
 
     let store = CookieStore::load_json(file)

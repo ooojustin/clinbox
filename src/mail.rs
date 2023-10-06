@@ -1,16 +1,19 @@
 #[path = "cookies.rs"]
 mod cookies;
 
+#[path = "utils.rs"]
+mod utils;
+
+use std::fs::File;
+use std::env::temp_dir;
+use std::io::Write;
+use uuid::Uuid;
 use serde::Deserialize;
 use anyhow::Result;
-use reqwest::{Client, header};
+use reqwest::Client;
 use reqwest_cookie_store::CookieStoreMutex;
 
 const DISPOSABLE_MAIL: &str = "https://www.disposablemail.com";
-
-// Most common user agents: https://www.useragents.me/
-// Chrome 117.0.0 [Windows]
-const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36";
 
 impl Inbox {
     pub fn new() -> Self {
@@ -31,12 +34,12 @@ impl Inbox {
 
     pub async fn establish_address(&mut self) -> Result<()> {
         self.client.get(DISPOSABLE_MAIL)
-            .headers(headers(false))
+            .headers(utils::headers(false))
             .send()
             .await?;
 
         let response = self.client.get(format!("{}/index/index", DISPOSABLE_MAIL))
-            .headers(headers(true))
+            .headers(utils::headers(true))
             .send()
             .await?
             .error_for_status()?;
@@ -51,7 +54,7 @@ impl Inbox {
 
     pub async fn get_mail(&self) -> Result<Vec<Email>> {
         let response = self.client.get(format!("{}/index/refresh", DISPOSABLE_MAIL))
-            .headers(headers(true))
+            .headers(utils::headers(true))
             .send()
             .await?
             .error_for_status()?;
@@ -63,14 +66,12 @@ impl Inbox {
     }
 
     pub async fn populate_content(&self, mail: &mut Email) -> Result<()> {
-        if !mail.content.is_empty() {
-            // content is already populated
-            println!("CONTENT ALREADY POPULATED");
+        if mail.has_content() {
             return Ok(());
         }
 
         let response = self.client.get(format!("{}/email/id/{}", DISPOSABLE_MAIL, mail.id))
-            .headers(headers(true))
+            .headers(utils::headers(true))
             .send()
             .await?
             .error_for_status()?;
@@ -98,12 +99,37 @@ impl Inbox {
 }
 
 impl Email {
+    #[allow(dead_code)]
+    pub fn open(&self) -> Result<()> {
+
+        // random temp file for email html content
+        let file_name = format!("{}.html", Uuid::new_v4());
+        let mut file_path = temp_dir();
+        file_path.push(file_name);
+        
+        // create file and write contents
+        let mut file = File::create(&file_path)?;
+        file.write_all(self.content.as_bytes())?;
+
+        // convert file path to string, open in browser
+        let path_string = file_path
+            .to_string_lossy()
+            .to_string();
+        utils::open(path_string);
+
+        Ok(())
+    }
+
     fn list_from_str(text: String) -> Result<Vec<Self>> {
         let mut mail: Vec<Email> = serde_json::from_str(&text)?;
         for m in &mut mail {
             m.read = m.read_str.to_lowercase() != "new";
         }
         Ok(mail)
+    }
+
+    fn has_content(&self) -> bool {
+        return !self.content.is_empty();
     }
 }
 
@@ -142,13 +168,4 @@ pub struct Email {
 
     #[serde(rename = "precteno")]
     read_str: String,
-}
-
-pub fn headers(xml_http: bool) -> header::HeaderMap {
-    let mut headers = header::HeaderMap::new();
-    headers.insert("User-Agent", header::HeaderValue::from_static(USER_AGENT));
-    if xml_http {
-        headers.insert("X-Requested-With", header::HeaderValue::from_static("XMLHttpRequest"));
-    }
-    headers
 }
