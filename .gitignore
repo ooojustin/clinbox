@@ -1,1 +1,4 @@
 /target
+
+# Cookies for reqwest client to restore session
+/cookies.json
