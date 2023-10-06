@@ -1,6 +1,6 @@
 mod mail;
 
-use mail::Inbox;
+use mail::{Inbox, Email};
 use tokio::time::{Duration, sleep};
 
 #[tokio::main]
@@ -18,20 +18,23 @@ async fn main() {
         }
     };
 
-    let interval = Duration::from_secs(10);
+    //inbox.print_cookies();
+
+    let interval = Duration::from_secs(3);
     sleep(interval).await;
 
-    //loop {
-    match inbox.get_mail().await {
-        Ok(mail) => {
-            println!("{:?}", mail);
-        },
-        Err(e) => {
-            eprintln!("mail error: {}", e);
-        }
-    };
-    sleep(interval).await;
-    //}
+    let mut emails: Vec<Email> = inbox.get_mail().await.unwrap();
+
+    println!("emails: {:?}", emails);
+
+    let email = emails.get_mut(0).unwrap();
     
-    inbox.save();
+    if let Err(err) = inbox.populate_content(email).await {
+        eprintln!("failed to populate email content: {}", err);
+    }
+    
+    println!("emails: {:?}", emails);
+
+    inbox.save_cookies();
+
 }

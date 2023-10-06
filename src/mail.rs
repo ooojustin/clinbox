@@ -6,21 +6,16 @@ use anyhow::Result;
 use reqwest::{Client, header};
 use reqwest_cookie_store::CookieStoreMutex;
 
-const DISPOSABLE_MAIL: &str = "https://www.disposablemail.com/";
-const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0";
+const DISPOSABLE_MAIL: &str = "https://www.disposablemail.com";
+
+// Most common user agents: https://www.useragents.me/
+// Chrome 117.0.0 [Windows]
+const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36";
 
 impl Inbox {
     pub fn new() -> Self {
         let mutex = cookies::get_store_mutex();
         let cookies = std::sync::Arc::new(mutex);
-        {
-            // Examine initial contents
-            println!("initial load");
-            let store = cookies.lock().unwrap();
-            for c in store.iter_any() {
-                println!("{:?}", c);
-            }
-        }
 
         let client = Client::builder()
             .cookie_provider(std::sync::Arc::clone(&cookies))
@@ -40,7 +35,7 @@ impl Inbox {
             .send()
             .await?;
 
-        let response = self.client.get(format!("{}index/index", DISPOSABLE_MAIL))
+        let response = self.client.get(format!("{}/index/index", DISPOSABLE_MAIL))
             .headers(headers(true))
             .send()
             .await?
@@ -55,7 +50,7 @@ impl Inbox {
     }
 
     pub async fn get_mail(&self) -> Result<Vec<Email>> {
-        let response = self.client.get(format!("{}index/refresh", DISPOSABLE_MAIL))
+        let response = self.client.get(format!("{}/index/refresh", DISPOSABLE_MAIL))
             .headers(headers(true))
             .send()
             .await?
@@ -67,7 +62,33 @@ impl Inbox {
         Ok(mail)
     }
 
-    pub fn save(&self) {
+    pub async fn populate_content(&self, mail: &mut Email) -> Result<()> {
+        if !mail.content.is_empty() {
+            // content is already populated
+            println!("CONTENT ALREADY POPULATED");
+            return Ok(());
+        }
+
+        let response = self.client.get(format!("{}/email/id/{}", DISPOSABLE_MAIL, mail.id))
+            .headers(headers(true))
+            .send()
+            .await?
+            .error_for_status()?;
+
+        let text = response.text().await?;
+        mail.content = text;
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub fn print_cookies(&self) {
+        let store = self.cookies.lock().unwrap();
+        for c in store.iter_any() {
+            println!("Cookies: {:?}", c);
+        }
+    }
+
+    pub fn save_cookies(&self) {
         let c = std::sync::Arc::clone(&self.cookies);
         match cookies::save_store(c) {
             Ok(()) => println!("Saved cookies."),
@@ -115,6 +136,9 @@ pub struct Email {
 
     #[serde(skip)]
     pub read: bool,
+
+    #[serde(skip)]
+    pub content: String,
 
     #[serde(rename = "precteno")]
     read_str: String,
