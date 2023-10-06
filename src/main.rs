@@ -1,11 +1,13 @@
-mod mail;
-
 extern crate lazy_static;
 
+mod mail;
+mod args;
+
 use mail::{Inbox, Email};
-use tokio::time::{Duration, sleep};
-use std::sync::{Mutex, MutexGuard};
+use std::sync::Mutex;
 use lazy_static::lazy_static;
+use clap::Parser;
+use args::CLI;
 
 lazy_static! {
     static ref INBOX: Mutex<Inbox> = Mutex::new(Inbox::new());
@@ -26,33 +28,42 @@ async fn main() {
         }
     };
 
-    //inbox.print_cookies();
-
-    let interval = Duration::from_secs(3);
-    sleep(interval).await;
-
-    let mut emails: Vec<Email> = inbox.get_mail().await.unwrap();
-
-    println!("emails: {:?}", emails);
-
-    populate_emails(&mut inbox, &mut emails).await;
-    
-    println!("emails [populated]: {:?}", emails);
-
-    let email = emails.get(0).unwrap();
-    email.open().unwrap();
+    let args = CLI::parse();
+    match args.command {
+        args::Commands::Show { count }=> {
+            let ai = inbox.address_info.as_ref().unwrap();
+            let all_emails: Vec<Email> = inbox.get_mail().await.unwrap();
+            let emails: Vec<&Email> = all_emails.iter().take(count).collect();
+            println!("Email address: {}", ai.email);
+            print_emails(&emails);
+        },
+        args::Commands::Open { id }  => {
+            let mut emails: Vec<Email> = inbox.get_mail().await.unwrap();
+            match emails.iter_mut().find(|email| email.id == id) {
+                Some(email) => {
+                    match inbox.populate_content(email).await {
+                        Ok(()) => {
+                            email.open().unwrap();
+                        },
+                        Err(err) => {
+                            eprintln!("Failed to populate email [ID: {}] content: {}", email.id, err);
+                        }
+                    }
+                },
+                None => {
+                    println!("Failed to find email with specified ID: {}", id);
+                }
+            }
+        }
+    }
 
     inbox.save_cookies();
 
 }
 
-async fn populate_emails<'a>(
-    inbox: &'a MutexGuard<'a, Inbox>, 
-    emails: &mut Vec<Email>
-) {
+fn print_emails(emails: &Vec<&Email>) {
     for email in emails {
-        if let Err(err) = inbox.populate_content(email).await {
-            eprintln!("failed to populate email [ID: {}] content: {}", email.id, err);
-        }
+        let r = if email.read { "⦾" } else { "⦿" };
+        println!("[{}] {} {} - {} ({})", email.id, r, email.subject, email.from, email.when);
     }
 }

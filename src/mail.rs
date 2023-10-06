@@ -149,7 +149,7 @@ pub struct AddressInfo {
 
 #[derive(Debug, Deserialize)]
 pub struct Email {
-    pub id: i32,
+    pub id: u32,
 
     #[serde(rename = "predmet")]
     pub subject: String,
