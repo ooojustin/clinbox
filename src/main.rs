@@ -59,7 +59,7 @@ async fn main() {
                 }
             }
         },
-        args::Commands::Next { timeout } => {
+        args::Commands::Next { timeout, interval } => {
             println!("Email address: {}", ai.email);
             println!("Timeout duration: {} seconds", timeout);
             println!("Waiting to automatically open next received email...");
@@ -67,7 +67,7 @@ async fn main() {
             let mut timed_out = false;
             let mut idx = 0;
 
-            let interval = Duration::from_secs(10);
+            let interval_dur = Duration::from_secs(interval);
             let timeout_dur = Duration::from_secs(timeout);
             let start_time = Instant::now();
             let start_count = inbox.get_mail().await.unwrap().len();
@@ -85,7 +85,7 @@ async fn main() {
                     break;
                 }
 
-                thread::sleep(interval);
+                thread::sleep(interval_dur);
             }
 
             if !timed_out {
@@ -94,6 +94,7 @@ async fn main() {
 
                 match inbox.populate_content(email).await {
                     Ok(()) => {
+                        println!("Email received: {} (From: {})", email.subject, email.from);
                         email.open().unwrap();
                     },
                     Err(err) => {
