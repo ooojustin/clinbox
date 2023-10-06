@@ -19,5 +19,9 @@ pub enum Commands {
         #[arg()]
         id: u32,
     },
+    Next {
+        #[arg(short, long, default_value = "120")]
+        timeout: u64,
+    },
     Copy
 }

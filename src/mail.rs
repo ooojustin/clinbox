@@ -91,9 +91,8 @@ impl Inbox {
 
     pub fn save_cookies(&self) {
         let c = std::sync::Arc::clone(&self.cookies);
-        match cookies::save_store(c) {
-            Ok(()) => println!("Saved cookies."),
-            Err(e) => eprintln!("Error saving cookies: {}", e)
+        if let Err(err) = cookies::save_store(c) {
+            eprintln!("Error saving cookies: {}", err);
         }
     }
 }

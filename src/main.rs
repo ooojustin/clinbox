@@ -8,6 +8,8 @@ use anyhow::{Result, anyhow};
 use clipboard::{ClipboardContext, ClipboardProvider};
 use mail::{Inbox, Email};
 use std::sync::Mutex;
+use std::thread;
+use std::time::{Instant, Duration};
 use lazy_static::lazy_static;
 use clap::Parser;
 use args::CLI;
@@ -54,6 +56,49 @@ async fn main() {
                 },
                 None => {
                     println!("Failed to find email with specified ID: {}", id);
+                }
+            }
+        },
+        args::Commands::Next { timeout } => {
+            println!("Email address: {}", ai.email);
+            println!("Timeout duration: {} seconds", timeout);
+            println!("Waiting to automatically open next received email...");
+
+            let mut timed_out = false;
+            let mut idx = 0;
+
+            let interval = Duration::from_secs(10);
+            let timeout_dur = Duration::from_secs(timeout);
+            let start_time = Instant::now();
+            let start_count = inbox.get_mail().await.unwrap().len();
+
+            loop {
+                let count = inbox.get_mail().await.unwrap().len();
+                if count > start_count {
+                    idx = (count - start_count) - 1;
+                    break;
+                }
+
+                let elapsed_time = start_time.elapsed();
+                if elapsed_time > timeout_dur {
+                    timed_out = true;
+                    break;
+                }
+
+                thread::sleep(interval);
+            }
+
+            if !timed_out {
+                let mut emails: Vec<Email> = inbox.get_mail().await.unwrap();
+                let email = emails.get_mut(idx).unwrap();
+
+                match inbox.populate_content(email).await {
+                    Ok(()) => {
+                        email.open().unwrap();
+                    },
+                    Err(err) => {
+                        eprintln!("Failed to populate email [ID: {}] content: {}", email.id, err);
+                    }
                 }
             }
         },
