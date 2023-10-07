@@ -34,5 +34,11 @@ pub enum Commands {
         interval: u64,
     },
     /// Copy email address to clipboard.
-    Copy
+    Copy,
+    /// Delete current inbox and automatically generate new email address.
+    Delete {
+        /// Copy email address to clipboard.
+        #[arg(short, long)]
+        copy: bool,
+    }
 }

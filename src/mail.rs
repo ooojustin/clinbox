@@ -95,6 +95,11 @@ impl Inbox {
             eprintln!("Error saving cookies: {}", err);
         }
     }
+
+    pub fn delete() -> Result<()> {
+        cookies::delete_file()?;
+        Ok(())
+    }
 }
 
 impl Email {

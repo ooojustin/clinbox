@@ -39,3 +39,13 @@ pub fn save_store(cookies: std::sync::Arc<CookieStoreMutex>) -> Result<()> {
     store.save_json(&mut writer).unwrap();
     Ok(())
 }
+
+pub fn delete_file() -> Result<()> {
+    let metadata = fs::metadata(COOKIES_PATH)?;
+    if !metadata.is_file() {
+        return Err(anyhow!("Cookies path must be a file."))
+    }
+
+    fs::remove_file(COOKIES_PATH)?;
+    Ok(())
+}
