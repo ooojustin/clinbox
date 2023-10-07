@@ -64,3 +64,16 @@ impl Email {
         return !self.content.is_empty();
     }
 }
+
+pub trait EmailVector {
+    fn print(&self);
+}
+
+impl EmailVector for Vec<&Email> {
+    fn print(&self) {
+        for email in self {
+            let r = if email.read { "○" } else { "●" };
+            println!("[{}] {} {} - {} ({})", email.id, r, email.subject, email.from, email.when);
+        }
+    }
+}

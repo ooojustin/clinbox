@@ -6,7 +6,8 @@ mod args;
 
 use anyhow::{Result, anyhow};
 use clipboard::{ClipboardContext, ClipboardProvider};
-use inbox::{Inbox, email::Email};
+use inbox::Inbox;
+use inbox::email::{Email, EmailVector};
 use std::sync::Mutex;
 use std::thread;
 use std::time::{Instant, Duration};
@@ -52,7 +53,7 @@ async fn main() {
             }
             let all_emails: Vec<Email> = inbox.get_mail().await.unwrap();
             let emails: Vec<&Email> = all_emails.iter().take(count).collect();
-            print_emails(&emails);
+            emails.print();
         },
         args::Commands::Open { id }  => {
             let mut emails: Vec<Email> = inbox.get_mail().await.unwrap();
@@ -141,13 +142,6 @@ async fn main() {
 
     inbox.save_cookies();
 
-}
-
-fn print_emails(emails: &Vec<&Email>) {
-    for email in emails {
-        let r = if email.read { "○" } else { "●" };
-        println!("[{}] {} {} - {} ({})", email.id, r, email.subject, email.from, email.when);
-    }
 }
 
 fn copy_to_clipboard(text: &str) -> Result<()> {
