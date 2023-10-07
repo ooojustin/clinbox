@@ -1,19 +1,21 @@
 #[path = "cookies.rs"]
 mod cookies;
-
-#[path = "utils.rs"]
 mod utils;
+pub mod email;
 
-use std::fs::File;
-use std::env::temp_dir;
-use std::io::Write;
-use uuid::Uuid;
 use serde::Deserialize;
 use anyhow::Result;
 use reqwest::Client;
 use reqwest_cookie_store::CookieStoreMutex;
+use email::Email;
 
 const DISPOSABLE_MAIL: &str = "https://www.disposablemail.com";
+
+pub struct Inbox {
+    pub address_info: Option<AddressInfo>,
+    client: Client,
+    cookies: std::sync::Arc<CookieStoreMutex>,
+}
 
 impl Inbox {
     pub fn new() -> Self {
@@ -102,74 +104,10 @@ impl Inbox {
     }
 }
 
-impl Email {
-    #[allow(dead_code)]
-    pub fn open(&self) -> Result<()> {
-
-        // random temp file for email html content
-        let file_name = format!("{}.html", Uuid::new_v4());
-        let mut file_path = temp_dir();
-        file_path.push(file_name);
-        
-        // create file and write contents
-        let mut file = File::create(&file_path)?;
-        file.write_all(self.content.as_bytes())?;
-
-        // convert file path to string, open in browser
-        let path_string = file_path
-            .to_string_lossy()
-            .to_string();
-        utils::open(path_string);
-
-        Ok(())
-    }
-
-    fn list_from_str(text: String) -> Result<Vec<Self>> {
-        let mut mail: Vec<Email> = serde_json::from_str(&text)?;
-        for m in &mut mail {
-            m.read = m.read_str.to_lowercase() != "new";
-        }
-        Ok(mail)
-    }
-
-    fn has_content(&self) -> bool {
-        return !self.content.is_empty();
-    }
-}
-
-pub struct Inbox {
-    pub address_info: Option<AddressInfo>,
-    client: Client,
-    cookies: std::sync::Arc<CookieStoreMutex>,
-}
-
 #[derive(Debug, Deserialize)]
 pub struct AddressInfo {
     pub email: String,
 
     #[serde(rename = "heslo")]
     _password: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Email {
-    pub id: u32,
-
-    #[serde(rename = "predmet")]
-    pub subject: String,
-
-    #[serde(rename = "od")]
-    pub from: String,
-
-    #[serde(rename = "kdy")]
-    pub when: String,
-
-    #[serde(skip)]
-    pub read: bool,
-
-    #[serde(skip)]
-    pub content: String,
-
-    #[serde(rename = "precteno")]
-    read_str: String,
 }

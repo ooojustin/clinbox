@@ -1,12 +1,12 @@
 extern crate lazy_static;
 extern crate clipboard;
 
-mod mail;
+mod inbox;
 mod args;
 
 use anyhow::{Result, anyhow};
 use clipboard::{ClipboardContext, ClipboardProvider};
-use mail::{Inbox, Email};
+use inbox::{Inbox, email::Email};
 use std::sync::Mutex;
 use std::thread;
 use std::time::{Instant, Duration};
