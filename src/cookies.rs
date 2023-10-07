@@ -1,16 +1,22 @@
 use std::fs::{self, File};
+use std::env::temp_dir;
 use anyhow::{Result, anyhow};
 use reqwest_cookie_store::{CookieStore, CookieStoreMutex};
 
-const COOKIES_PATH: &str = "./cookies.json";
+fn get_file() -> String {
+    let mut file_path = temp_dir();
+    file_path.push("clinbox.json");
+    file_path.to_string_lossy().to_string()
+}
 
 fn get_store() -> Result<CookieStore> {
-    let metadata = fs::metadata(COOKIES_PATH)?;
+    let path = get_file();
+    let metadata = fs::metadata(path.clone())?;
     if !metadata.is_file() {
         return Err(anyhow!("Cookies path must be a file."))
     }
 
-    let file = File::open(COOKIES_PATH)
+    let file = File::open(path)
         .map(std::io::BufReader::new)?;
 
     let store = CookieStore::load_json(file)
@@ -22,18 +28,12 @@ fn get_store() -> Result<CookieStore> {
 pub fn get_store_mutex() -> CookieStoreMutex {
     let store = get_store()
         .unwrap_or(CookieStore::default());
-    //let store = match get_store() {
-        //Ok(s) => s,
-        //Err(e) => {
-            //eprintln!("get_store error: {}", e);
-            //CookieStore::default()
-        //}
-    //};
     CookieStoreMutex::new(store)
 }
 
 pub fn save_store(cookies: std::sync::Arc<CookieStoreMutex>) -> Result<()> {
-    let mut writer = std::fs::File::create(COOKIES_PATH)
+    let path = get_file();
+    let mut writer = std::fs::File::create(path)
         .map(std::io::BufWriter::new)?;
     let store = cookies.lock().unwrap();
     store.save_json(&mut writer).unwrap();
@@ -41,11 +41,12 @@ pub fn save_store(cookies: std::sync::Arc<CookieStoreMutex>) -> Result<()> {
 }
 
 pub fn delete_file() -> Result<()> {
-    let metadata = fs::metadata(COOKIES_PATH)?;
+    let path = get_file();
+    let metadata = fs::metadata(path.clone())?;
     if !metadata.is_file() {
         return Err(anyhow!("Cookies path must be a file."))
     }
 
-    fs::remove_file(COOKIES_PATH)?;
+    fs::remove_file(path)?;
     Ok(())
 }

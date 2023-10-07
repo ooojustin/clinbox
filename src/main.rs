@@ -25,8 +25,13 @@ async fn main() {
 
     // If inbox is being deleted, run delete func before calling establish_address
     if let args::Commands::Delete { copy: _ } = args.command {
-        if let Ok(()) = Inbox::delete() {
-            println!("Inbox deleted successfully.")
+        match Inbox::delete() {
+            Ok(()) => {
+                println!("Inbox deleted successfully.");
+            },
+            Err(err) => {
+                eprintln!("Failed to delete inbox: {}", err);
+            }
         }
     }
 
