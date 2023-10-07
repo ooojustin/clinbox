@@ -21,6 +21,15 @@ lazy_static! {
 #[tokio::main]
 async fn main() {
 
+    let args = CLI::parse();
+
+    // If inbox is being deleted, run delete func before calling establish_address
+    if let args::Commands::Delete { copy: _ } = args.command {
+        if let Ok(()) = Inbox::delete() {
+            println!("Inbox deleted successfully.")
+        }
+    }
+
     let mut inbox = INBOX.lock().unwrap();
 
     if let Err(e) = inbox.establish_address().await {
@@ -30,7 +39,6 @@ async fn main() {
     let ai = inbox.address_info.as_ref().unwrap();
     let mut copy_email = false;
 
-    let args = CLI::parse();
     match args.command {
         args::Commands::Show { count, copy }=> {
             println!("Email address: {}", ai.email);
@@ -106,6 +114,12 @@ async fn main() {
         args::Commands::Copy => {
             println!("Email address: {}", ai.email);
             copy_email = true;
+        },
+        args::Commands::Delete { copy } => { 
+            println!("New email address created: {}", ai.email);
+            if copy {
+                copy_email = true;
+            }
         }
     }
 
