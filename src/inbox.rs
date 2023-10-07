@@ -11,13 +11,18 @@ use email::Email;
 
 const DISPOSABLE_MAIL: &str = "https://www.disposablemail.com";
 
+/// A disposable email inbox.
 pub struct Inbox {
+    /// Inbox email address information.
     pub address_info: Option<AddressInfo>,
+    /// Reqwest client containing inbox session data.
     client: Client,
+    /// Cookie store mutex accessible in thread safe fashion.
     cookies: std::sync::Arc<CookieStoreMutex>,
 }
 
 impl Inbox {
+    /// Create an inbox using the default cookies retrieved from disk.
     pub fn new() -> Self {
         let mutex = cookies::get_store_mutex();
         let cookies = std::sync::Arc::new(mutex);
@@ -34,6 +39,8 @@ impl Inbox {
         }
     }
 
+    /// Establish new disposable mail session if it does not exist,
+    /// and assign AddressInfo object (including email address) in Inbox.
     pub async fn establish_address(&mut self) -> Result<()> {
         self.client.get(DISPOSABLE_MAIL)
             .headers(utils::headers(false))
@@ -54,6 +61,7 @@ impl Inbox {
         Ok(())
     }
 
+    /// Retrieve up-to-date list of emails in this disposable inbox.
     pub async fn get_mail(&self) -> Result<Vec<Email>> {
         let response = self.client.get(format!("{}/index/refresh", DISPOSABLE_MAIL))
             .headers(utils::headers(true))
@@ -67,6 +75,7 @@ impl Inbox {
         Ok(mail)
     }
 
+    /// Populate content of a specified email.
     pub async fn populate_content(&self, mail: &mut Email) -> Result<()> {
         if mail.has_content() {
             return Ok(());
@@ -83,6 +92,7 @@ impl Inbox {
         Ok(())
     }
 
+    /// Print cookies stored in Inbox.
     #[allow(dead_code)]
     pub fn print_cookies(&self) {
         let store = self.cookies.lock().unwrap();
@@ -91,6 +101,7 @@ impl Inbox {
         }
     }
 
+    /// Save inbox cookies to disk so the session can be restored.
     pub fn save_cookies(&self) {
         let c = std::sync::Arc::clone(&self.cookies);
         if let Err(err) = cookies::save_store(c) {
@@ -98,16 +109,20 @@ impl Inbox {
         }
     }
 
+    /// Delete cookies file from disk so a new session can be created.
     pub fn delete() -> Result<()> {
         cookies::delete_file()?;
         Ok(())
     }
 }
 
+/// Address information of an inbox.
 #[derive(Debug, Deserialize)]
 pub struct AddressInfo {
+    /// Disposable email address of the inbox.
     pub email: String,
 
+    /// Randomized password generated for the inbox.
     #[serde(rename = "heslo")]
     _password: String,
 }

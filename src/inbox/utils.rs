@@ -3,10 +3,11 @@
 use std::process::Command;
 use reqwest::header;
 
-// Most common user agents: https://www.useragents.me/
-// Chrome 117.0.0 [Windows]
+/// Chrome 117.0.0 [Windows]
+/// From list of most common user agents: https://www.useragents.me/
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36";
 
+/// Create header map to be used in web request.
 pub fn headers(xml_http: bool) -> header::HeaderMap {
     let mut headers = header::HeaderMap::new();
     headers.insert("User-Agent", header::HeaderValue::from_static(USER_AGENT));
@@ -16,6 +17,7 @@ pub fn headers(xml_http: bool) -> header::HeaderMap {
     headers
 }
 
+/// Open provided file path or URL in default program/browser.
 pub fn open(path: String) {
     let is_windows = cfg!(target_os = "windows");
 

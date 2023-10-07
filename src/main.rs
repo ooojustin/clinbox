@@ -144,6 +144,7 @@ async fn main() {
 
 }
 
+/// Copy provided text to clipboard.
 fn copy_to_clipboard(text: &str) -> Result<()> {
     let mut clipboard: ClipboardContext = match ClipboardProvider::new() {
         Ok(clipboard) => clipboard,
