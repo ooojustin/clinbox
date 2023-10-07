@@ -129,10 +129,21 @@ async fn main() {
         },
         args::Commands::Expires => {
             println!("Email address: {}", ai.email);
-            match inbox.get_exp_delta_string().await {
-                Ok(expires) => println!("Expires: {}", expires),
+            match inbox.get_exp_delta().await {
+                Ok(delta) => {
+                    let expires = inbox::utils::format_duration(delta);
+                    println!("Expires: {}", expires);
+                },
                 Err(err) => eprintln!("Failed to determine inbox expiration: {}", err)
             }
+        },
+        args::Commands::Website => {
+            inbox::utils::open(inbox::DISPOSABLE_MAIL.to_string());
+            println!("Opened DisposableMail website in browser.");
+        },
+        args::Commands::Github => {
+            inbox::utils::open("https://github.com/ooojustin/clinbox".to_string());
+            println!("Opened clinbox GitHub repository in browser.");
         }
     }
 
