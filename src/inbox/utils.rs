@@ -2,6 +2,7 @@
 
 use std::process::Command;
 use reqwest::header;
+use chrono::Duration;
 
 /// Chrome 117.0.0 [Windows]
 /// From list of most common user agents: https://www.useragents.me/
@@ -39,5 +40,19 @@ pub fn open(path: String) {
 
     if let Err(err) = result {
         eprintln!("Error: {}", err);
+    }
+}
+
+/// Format a duration to show an english representation of minutes/seconds.
+pub fn format_duration(duration: Duration) -> String {
+    let minutes = duration.num_minutes();
+    let seconds = duration.num_seconds() % 60;
+
+    if minutes == 0 {
+        format!("{} seconds", seconds)
+    } else if seconds == 0 {
+        format!("{} minutes", minutes)
+    } else {
+        format!("{} minutes {} seconds", minutes, seconds)
     }
 }

@@ -126,17 +126,20 @@ async fn main() {
             if copy {
                 copy_email = true;
             }
+        },
+        args::Commands::Expires => {
+            println!("Email address: {}", ai.email);
+            match inbox.get_exp_delta_string().await {
+                Ok(expires) => println!("Expires: {}", expires),
+                Err(err) => eprintln!("Failed to determine inbox expiration: {}", err)
+            }
         }
     }
 
     if copy_email {
         match copy_to_clipboard(&ai.email) {
-            Ok(()) => {
-                println!("Email address copied to clipboard.");
-            },
-            Err(err) => {
-                eprintln!("{}", err);
-            }
+            Ok(()) => println!("Email address copied to clipboard."),
+            Err(err) => eprintln!("{}", err)
         }
     }
 

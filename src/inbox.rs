@@ -1,6 +1,7 @@
 #[path = "cookies.rs"]
 mod cookies;
 mod utils;
+mod date_time;
 pub mod email;
 
 use serde::Deserialize;
@@ -8,6 +9,7 @@ use anyhow::Result;
 use reqwest::Client;
 use reqwest_cookie_store::CookieStoreMutex;
 use email::Email;
+use chrono::{Duration, DateTime, Utc};
 
 const DISPOSABLE_MAIL: &str = "https://www.disposablemail.com";
 
@@ -91,13 +93,34 @@ impl Inbox {
         mail.content = text;
         Ok(())
     }
+    
+    async fn get_exp_delta(&self) -> Result<Duration> {
+        let response = self.client.get(format!("{}/index/zivot", DISPOSABLE_MAIL))
+            .headers(utils::headers(true))
+            .send()
+            .await?
+            .error_for_status()?;
+
+        let text = response.text().await?;
+        let li: Lifetime = serde_json::from_str(&text)?;
+
+        Ok(li.end - li.now)
+    }
+
+    pub async fn get_exp_delta_string(&self) -> Result<String> {
+        let delta: Duration = self.get_exp_delta().await?;
+        let delta_str = utils::format_duration(delta);
+        Ok(delta_str)
+    }
 
     /// Print cookies stored in Inbox.
     #[allow(dead_code)]
     pub fn print_cookies(&self) {
+        let ai = self.address_info.as_ref().unwrap();
+        println!("=== inbox {} cookies ===", ai.email);
         let store = self.cookies.lock().unwrap();
-        for c in store.iter_any() {
-            println!("Cookies: {:?}", c);
+        for cookie in store.iter_any() {
+            println!("{:?}", cookie);
         }
     }
 
@@ -125,4 +148,13 @@ pub struct AddressInfo {
     /// Randomized password generated for the inbox.
     #[serde(rename = "heslo")]
     _password: String,
+}
+
+// Disposable inbox session lifetime information.
+#[derive(Debug, Deserialize)]
+struct Lifetime {
+    #[serde(rename = "ted", with = "date_time")]
+    now: DateTime<Utc>,
+    #[serde(rename = "konec", with = "date_time")]
+    end: DateTime<Utc>,
 }

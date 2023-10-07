@@ -35,10 +35,12 @@ pub enum Commands {
     },
     /// Copy email address to clipboard.
     Copy,
-    /// Delete current inbox and automatically generate new email address.
+    /// Delete the current inbox and automatically generate new email address.
     Delete {
         /// Copy new email address to clipboard.
         #[arg(short, long)]
         copy: bool,
-    }
+    },
+    /// Display the duration until the current inbox expires.
+    Expires
 }
