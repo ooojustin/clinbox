@@ -1,7 +1,7 @@
 #[path = "cookies.rs"]
 mod cookies;
-mod utils;
 mod date_time;
+pub mod utils;
 pub mod email;
 
 use serde::Deserialize;
@@ -11,7 +11,7 @@ use reqwest_cookie_store::CookieStoreMutex;
 use email::Email;
 use chrono::{Duration, DateTime, Utc};
 
-const DISPOSABLE_MAIL: &str = "https://www.disposablemail.com";
+pub const DISPOSABLE_MAIL: &str = "https://www.disposablemail.com";
 
 /// A disposable email inbox.
 pub struct Inbox {
@@ -94,7 +94,8 @@ impl Inbox {
         Ok(())
     }
     
-    async fn get_exp_delta(&self) -> Result<Duration> {
+    /// Determine how long it will be until this inbox expires.
+    pub async fn get_exp_delta(&self) -> Result<Duration> {
         let response = self.client.get(format!("{}/index/zivot", DISPOSABLE_MAIL))
             .headers(utils::headers(true))
             .send()
@@ -105,12 +106,6 @@ impl Inbox {
         let li: Lifetime = serde_json::from_str(&text)?;
 
         Ok(li.end - li.now)
-    }
-
-    pub async fn get_exp_delta_string(&self) -> Result<String> {
-        let delta: Duration = self.get_exp_delta().await?;
-        let delta_str = utils::format_duration(delta);
-        Ok(delta_str)
     }
 
     /// Print cookies stored in Inbox.
@@ -153,8 +148,11 @@ pub struct AddressInfo {
 // Disposable inbox session lifetime information.
 #[derive(Debug, Deserialize)]
 struct Lifetime {
+    /// The timestamp at which this object was retrieved.
     #[serde(rename = "ted", with = "date_time")]
     now: DateTime<Utc>,
+
+    /// The timestamp at which the associated inbox expires.
     #[serde(rename = "konec", with = "date_time")]
     end: DateTime<Utc>,
 }

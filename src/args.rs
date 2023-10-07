@@ -18,7 +18,7 @@ pub enum Commands {
         #[arg(short = 'C', long)]
         copy: bool,
     },
-    /// Open a specified email.
+    /// Open a specific email by providing the ID.
     Open {
         /// The ID of the email.
         #[arg()]
@@ -42,5 +42,9 @@ pub enum Commands {
         copy: bool,
     },
     /// Display the duration until the current inbox expires.
-    Expires
+    Expires,
+    /// Open the website that this program uses behind the scenes.
+    Website,
+    /// Open the GitHub repository for this application.
+    Github,
 }
