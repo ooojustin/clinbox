@@ -1,4 +1,3 @@
-extern crate lazy_static;
 extern crate clipboard;
 
 mod inbox;
@@ -8,16 +7,10 @@ use anyhow::{Result, anyhow};
 use clipboard::{ClipboardContext, ClipboardProvider};
 use inbox::Inbox;
 use inbox::email::{Email, EmailVector};
-use std::sync::Mutex;
 use std::thread;
 use std::time::{Instant, Duration};
-use lazy_static::lazy_static;
 use clap::Parser;
 use args::CLI;
-
-lazy_static! {
-    static ref INBOX: Mutex<Inbox> = Mutex::new(Inbox::new());
-}
 
 #[tokio::main]
 async fn main() {
@@ -26,7 +19,7 @@ async fn main() {
 
     // If inbox is being deleted, run delete func before calling establish_address
     if let args::Commands::Delete { copy: _ } = args.command {
-        match Inbox::delete() {
+        match Inbox::delete().await {
             Ok(()) => {
                 println!("Inbox deleted successfully.");
             },
@@ -36,7 +29,7 @@ async fn main() {
         }
     }
 
-    let mut inbox = INBOX.lock().unwrap();
+    let mut inbox = Inbox::new().await;
 
     if let Err(e) = inbox.establish_address().await {
         panic!("Failed to establish disposable mail session: {}", e);
@@ -154,7 +147,7 @@ async fn main() {
         }
     }
 
-    inbox.save_cookies();
+    inbox.save_cookies().await;
 
 }
 

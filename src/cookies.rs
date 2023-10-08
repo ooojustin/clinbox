@@ -1,4 +1,6 @@
-use std::fs::{self, File};
+use std::fs;
+use tokio::fs::File;
+use std::io::{BufReader, BufWriter};
 use std::env::temp_dir;
 use anyhow::{Result, anyhow};
 use reqwest_cookie_store::{CookieStore, CookieStoreMutex};
@@ -11,47 +13,50 @@ fn get_file() -> String {
 }
 
 /// Retrieve cookie store from content on disk.
-fn get_store() -> Result<CookieStore> {
+async fn get_store() -> Result<CookieStore> {
     let path = get_file();
     let metadata = fs::metadata(path.clone())?;
     if !metadata.is_file() {
         return Err(anyhow!("Cookies path must be a file."))
     }
 
-    let file = File::open(path)
-        .map(std::io::BufReader::new)?;
+    let file = File::open(path).await?;
+    let std_file = File::into_std(file).await;
+    let reader = BufReader::new(std_file);
 
-    let store = CookieStore::load_json(file)
+    let store = CookieStore::load_json(reader)
         .unwrap_or_default();
 
     Ok(store)
 }
 
 /// Retrieve mutex to access cookie store from contents on disk.
-pub fn get_store_mutex() -> CookieStoreMutex {
-    let store = get_store()
+pub async fn get_store_mutex() -> CookieStoreMutex {
+    let store = get_store().await
         .unwrap_or(CookieStore::default());
     CookieStoreMutex::new(store)
 }
 
 /// Save provided cookie store contents to file on disk.
-pub fn save_store(cookies: std::sync::Arc<CookieStoreMutex>) -> Result<()> {
+pub async fn save_store(cookies: std::sync::Arc<CookieStoreMutex>) -> Result<()> {
     let path = get_file();
-    let mut writer = std::fs::File::create(path)
-        .map(std::io::BufWriter::new)?;
+    let file = File::create(path).await?;
+    let std_file = File::into_std(file).await;
+    let mut writer = BufWriter::new(std_file);
+
     let store = cookies.lock().unwrap();
     store.save_json(&mut writer).unwrap();
     Ok(())
 }
 
 /// Delete cookies file from path returned by cookies::get_file().
-pub fn delete_file() -> Result<()> {
+pub async fn delete_file() -> Result<()> {
     let path = get_file();
     let metadata = fs::metadata(path.clone())?;
     if !metadata.is_file() {
         return Err(anyhow!("Cookies path must be a file."))
     }
 
-    fs::remove_file(path)?;
+    tokio::fs::remove_file(path).await?;
     Ok(())
 }

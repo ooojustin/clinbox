@@ -25,8 +25,8 @@ pub struct Inbox {
 
 impl Inbox {
     /// Create an inbox using the default cookies retrieved from disk.
-    pub fn new() -> Self {
-        let mutex = cookies::get_store_mutex();
+    pub async fn new() -> Self {
+        let mutex = cookies::get_store_mutex().await;
         let cookies = std::sync::Arc::new(mutex);
 
         let client = Client::builder()
@@ -120,16 +120,16 @@ impl Inbox {
     }
 
     /// Save inbox cookies to disk so the session can be restored.
-    pub fn save_cookies(&self) {
+    pub async fn save_cookies(&self) {
         let c = std::sync::Arc::clone(&self.cookies);
-        if let Err(err) = cookies::save_store(c) {
+        if let Err(err) = cookies::save_store(c).await {
             eprintln!("Error saving cookies: {}", err);
         }
     }
 
     /// Delete cookies file from disk so a new session can be created.
-    pub fn delete() -> Result<()> {
-        cookies::delete_file()?;
+    pub async fn delete() -> Result<()> {
+        cookies::delete_file().await?;
         Ok(())
     }
 }
