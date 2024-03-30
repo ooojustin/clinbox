@@ -1,9 +1,9 @@
-use std::fs::File;
+use anyhow::{anyhow, Result};
+use serde::Deserialize;
 use std::env::temp_dir;
+use std::fs::File;
 use std::io::Write;
 use uuid::Uuid;
-use serde::Deserialize;
-use anyhow::{Result, anyhow};
 
 #[path = "utils.rs"]
 mod utils;
@@ -43,7 +43,10 @@ impl Email {
     /// Write the email HTML contents in a temporary file and open the email in the default browser.
     pub fn open(&self) -> Result<()> {
         if !self.has_content() {
-            return Err(anyhow!(format!("Failed to open email [id: {}] because it is missing content.", self.id)));
+            return Err(anyhow!(format!(
+                "Failed to open email [id: {}] because it is missing content.",
+                self.id
+            )));
         }
 
         // random temp file for email html content
@@ -51,10 +54,10 @@ impl Email {
         let mut file_path = temp_dir();
         file_path.push(file_name);
 
-
         // add subject/from address to top of email content
         let from_html = self.from.replace("<", "&lt;").replace(">", "&gt;");
-        let email_html = format!("
+        let email_html = format!(
+            "
             <center>
                 <h1 style=\"margin-bottom: 0px\">{}</h1>
                 <h2 style=\"margin-top: 0px\">{}</h2>
@@ -65,16 +68,16 @@ impl Email {
                     [email retrieved by clinbox]
                 </a>
             </center>\n{}
-        ", self.subject, from_html, self.content);
-        
+        ",
+            self.subject, from_html, self.content
+        );
+
         // create file and write contents
         let mut file = File::create(&file_path)?;
         file.write_all(email_html.as_bytes())?;
 
         // convert file path to string, open in browser
-        let path_string = file_path
-            .to_string_lossy()
-            .to_string();
+        let path_string = file_path.to_string_lossy().to_string();
         utils::open(path_string);
 
         Ok(())
@@ -104,7 +107,10 @@ impl EmailVector for Vec<&Email> {
     fn print(&self) {
         for email in self {
             let r = if email.read { "○" } else { "●" };
-            println!("[{}] {} {} - {} ({})", email.id, r, email.subject, email.from, email.when);
+            println!(
+                "[{}] {} {} - {} ({})",
+                email.id, r, email.subject, email.from, email.when
+            );
         }
     }
 }

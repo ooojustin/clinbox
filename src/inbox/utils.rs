@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use std::process::Command;
-use reqwest::header;
 use chrono::Duration;
+use reqwest::header;
+use std::process::Command;
 
 /// Chrome 117.0.0 [Windows]
 /// From list of most common user agents: https://www.useragents.me/
@@ -13,7 +13,10 @@ pub fn headers(xml_http: bool) -> header::HeaderMap {
     let mut headers = header::HeaderMap::new();
     headers.insert("User-Agent", header::HeaderValue::from_static(USER_AGENT));
     if xml_http {
-        headers.insert("X-Requested-With", header::HeaderValue::from_static("XMLHttpRequest"));
+        headers.insert(
+            "X-Requested-With",
+            header::HeaderValue::from_static("XMLHttpRequest"),
+        );
     }
     headers
 }

@@ -1,9 +1,9 @@
-use std::fs;
-use tokio::fs::File;
-use std::io::{BufReader, BufWriter};
-use std::env::temp_dir;
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use reqwest_cookie_store::{CookieStore, CookieStoreMutex};
+use std::env::temp_dir;
+use std::fs;
+use std::io::{BufReader, BufWriter};
+use tokio::fs::File;
 
 /// Establish path of cookies file in temp directory.
 fn get_file() -> String {
@@ -17,23 +17,21 @@ async fn get_store() -> Result<CookieStore> {
     let path = get_file();
     let metadata = fs::metadata(path.clone())?;
     if !metadata.is_file() {
-        return Err(anyhow!("Cookies path must be a file."))
+        return Err(anyhow!("Cookies path must be a file."));
     }
 
     let file = File::open(path).await?;
     let std_file = File::into_std(file).await;
     let reader = BufReader::new(std_file);
 
-    let store = CookieStore::load_json(reader)
-        .unwrap_or_default();
+    let store = CookieStore::load_json(reader).unwrap_or_default();
 
     Ok(store)
 }
 
 /// Retrieve mutex to access cookie store from contents on disk.
 pub async fn get_store_mutex() -> CookieStoreMutex {
-    let store = get_store().await
-        .unwrap_or(CookieStore::default());
+    let store = get_store().await.unwrap_or(CookieStore::default());
     CookieStoreMutex::new(store)
 }
 
@@ -54,7 +52,7 @@ pub async fn delete_file() -> Result<()> {
     let path = get_file();
     let metadata = fs::metadata(path.clone())?;
     if !metadata.is_file() {
-        return Err(anyhow!("Cookies path must be a file."))
+        return Err(anyhow!("Cookies path must be a file."));
     }
 
     tokio::fs::remove_file(path).await?;

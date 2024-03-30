@@ -1,15 +1,15 @@
 #[path = "cookies.rs"]
 mod cookies;
 mod date_time;
-pub mod utils;
 pub mod email;
+pub mod utils;
 
-use serde::Deserialize;
 use anyhow::Result;
+use chrono::{DateTime, Duration, Utc};
+use email::Email;
 use reqwest::Client;
 use reqwest_cookie_store::CookieStoreMutex;
-use email::Email;
-use chrono::{Duration, DateTime, Utc};
+use serde::Deserialize;
 
 pub const DISPOSABLE_MAIL: &str = "https://www.disposablemail.com";
 
@@ -44,12 +44,15 @@ impl Inbox {
     /// Establish new disposable mail session if it does not exist,
     /// and assign AddressInfo object (including email address) in Inbox.
     pub async fn establish_address(&mut self) -> Result<()> {
-        self.client.get(DISPOSABLE_MAIL)
+        self.client
+            .get(DISPOSABLE_MAIL)
             .headers(utils::headers(false))
             .send()
             .await?;
 
-        let response = self.client.get(format!("{}/index/index", DISPOSABLE_MAIL))
+        let response = self
+            .client
+            .get(format!("{}/index/index", DISPOSABLE_MAIL))
             .headers(utils::headers(true))
             .send()
             .await?
@@ -65,7 +68,9 @@ impl Inbox {
 
     /// Retrieve up-to-date list of emails in this disposable inbox.
     pub async fn get_mail(&self) -> Result<Vec<Email>> {
-        let response = self.client.get(format!("{}/index/refresh", DISPOSABLE_MAIL))
+        let response = self
+            .client
+            .get(format!("{}/index/refresh", DISPOSABLE_MAIL))
             .headers(utils::headers(true))
             .send()
             .await?
@@ -73,7 +78,7 @@ impl Inbox {
 
         let text = response.text().await?;
         let mail = Email::list_from_str(text)?;
-        
+
         Ok(mail)
     }
 
@@ -83,7 +88,9 @@ impl Inbox {
             return Ok(());
         }
 
-        let response = self.client.get(format!("{}/email/id/{}", DISPOSABLE_MAIL, mail.id))
+        let response = self
+            .client
+            .get(format!("{}/email/id/{}", DISPOSABLE_MAIL, mail.id))
             .headers(utils::headers(true))
             .send()
             .await?
@@ -93,10 +100,12 @@ impl Inbox {
         mail.content = text;
         Ok(())
     }
-    
+
     /// Determine how long it will be until this inbox expires.
     pub async fn get_exp_delta(&self) -> Result<Duration> {
-        let response = self.client.get(format!("{}/index/zivot", DISPOSABLE_MAIL))
+        let response = self
+            .client
+            .get(format!("{}/index/zivot", DISPOSABLE_MAIL))
             .headers(utils::headers(true))
             .send()
             .await?
