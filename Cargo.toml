@@ -1,6 +1,12 @@
 [package]
 name = "clinbox"
+authors = ["Justin Garofolo <justin@garofolo.net>"]
 version = "0.1.0"
+license = "MIT"
+categories = ["command-line-utilities"]
+description = "Command line utility to generate and access disposable email addresses."
+homepage = "https://github.com/ooojustin/clinbox"
+repository = "https://github.com/ooojustin/clinbox"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
