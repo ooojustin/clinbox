@@ -1,10 +1,20 @@
 # clinbox
 
-Open source ommand line application to generate and access disposable email addresses, written in Rust.
+[![Crates.io Version](https://img.shields.io/crates/v/clinbox?style=for-the-badge&color=%23FF0060)](https://crates.io/crates/clinbox)
+
+Open source ommand line utility to generate and access disposable email addresses, written in Rust.
+
+## Installation
+
+Install using cargo:
+
+```bash
+cargo install clinbox
+```
+
+You can also download a compiled binary from the [releases](https://github.com/ooojustin/clinbox/releases) page.
 
 ## Usage
-
-To use clinbox, download the release binary or compile it yourself. If you'd like to be able to use it from your command line regardless of the directory you're in, ensure the executable is stored in a directory in your system's PATH.
 
 You can get started by using the `clinbox show` comand to see your random email address, and list the emails in your inbox.
 
@@ -12,21 +22,22 @@ By default you'll see your 5 most recent emails, but you can specify a count (ex
 
 ## Commands
 
-| Command | Description  |
-| ------  | ----------   |
-| show    | Show inbox information and list emails.|
-| open    | Open a specific email by providing the ID. |
-| next    | Wait for a new email to be received and automatically open it. |
-| copy    | Copy email address to clipboard. |
-| delete  | Delete the current inbox and automatically generate new email address. |
-| expires | Display the duration until the current inbox expires. |
+| Command | Description                                                                                   |
+| ------- | --------------------------------------------------------------------------------------------- |
+| show    | Show inbox information and list emails.                                                       |
+| open    | Open a specific email by providing the ID.                                                    |
+| next    | Wait for a new email to be received and automatically open it.                                |
+| copy    | Copy email address to clipboard.                                                              |
+| delete  | Delete the current inbox and automatically generate new email address.                        |
+| expires | Display the duration until the current inbox expires.                                         |
 | website | Open the [website](https://www.disposablemail.com/) that this program uses behind the scenes. |
-| github  | Open the GitHub repository for this application. *Welcome!* |
-| help    | Print this nifty list of commands in your console. |
+| github  | Open the GitHub repository for this application. _Welcome!_                                   |
+| help    | Print this nifty list of commands in your console.                                            |
 
 To see additional information about a specific command (and arguments), you can use the `-h` flag.
 
 For example, `clinbox next -h` will provide the following information:
+
 ```
 @justin ➜ clinbox git(master): clinbox next -h
 Wait for a new email to be received and automatically open it
@@ -40,6 +51,8 @@ Options:
 ```
 
 ## Questions/Suggestions
+
 If you have any questions about this program or want to provide feedback, feel free to:
-* ❓ [Create an issue](https://github.com/ooojustin/clinbox/issues) on GitHub.
-* 📫 Reach me via email: [justin's email](mailto:justin@garofolo.net)
+
+- ❓ [Create an issue](https://github.com/ooojustin/clinbox/issues) on GitHub.
+- 📫 Reach me via email: [justin@garofolo.net](mailto:justin@garofolo.net)
