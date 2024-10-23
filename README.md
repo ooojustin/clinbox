@@ -2,7 +2,7 @@
 
 [![Crates.io Version](https://img.shields.io/crates/v/clinbox?style=for-the-badge&color=%23FF0060)](https://crates.io/crates/clinbox)
 
-Open source ommand line utility to generate and access disposable email addresses, written in Rust.
+Open source command line utility to generate and access disposable email addresses, written in Rust.
 
 ## Installation
 
